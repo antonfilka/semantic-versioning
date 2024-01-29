@@ -1,0 +1,36 @@
+name: "Create release branch"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Identify as bot
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply version bump (minor)
+        run: npm version minor
+
+      - name: Git push version bump
+        run: git push --follow-tags
+
+      - name: Retrieve minor version
+        run: echo "MINOR_VERSION=$(npm pkg get version --parseable=true | awk -F. '{print $2}')" >> $GITHUB_OUTPUT
+        id: minor_version
+
+      - name: Create, checkout and push release branch
+        run: |
+          git branch release/$MINOR_VERSION
+          git checkout release/$MINOR_VERSION
+          git push -u origin release/$MINOR_VERSION
+        env:
+          MINOR_VERSION: ${{ steps.minor_version.outputs.MINOR_VERSION }}
+
+      - name: Output version change
+        run: echo "Current version $(npm pkg get version)"
