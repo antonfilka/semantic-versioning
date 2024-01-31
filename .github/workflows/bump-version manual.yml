@@ -1,0 +1,39 @@
+name: "Version bump manual"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        type: choice
+        description: "Select type"
+        required: true
+        options: ["major", "minor", "patch"]
+
+jobs:
+  bump-version:
+    name: "Bump version manual"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Identify as bot
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: |
+          if [ "${{ inputs.release-type }}" = "major" ]; then
+            npm version major
+          elif [ "${{ inputs.release-type }}" = "minor" ]; then
+            npm version minor
+          else
+            npm version patch
+          fi
+
+      - name: Git push version bump
+        run: git push --follow-tags
+
+      - id: set-version
+        name: Output version change
+        run: echo "Current version $(npm pkg get version)"
